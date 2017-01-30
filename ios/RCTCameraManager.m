@@ -599,7 +599,7 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
 				CGImageRef rotatedCGImage;
 				if ([options objectForKey:@"rotation"]) {
 					float rotation = [[options objectForKey:@"rotation"] floatValue];
-					rotatedCGImage = [self newCGImageRotatedByAngle:CGImage angle:rotation];
+					rotatedCGImage = [self newCGImageRotatedByAngle:cropImage.CGImage angle:rotation];
 				} else {
 					// Get metadata orientation
 					int metadataOrientation = [[imageMetadata objectForKey:(NSString *)kCGImagePropertyOrientation] intValue];
@@ -614,7 +614,8 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
 						rotatedCGImage = [self newCGImageRotatedByAngle:cropImage.CGImage angle:0];
 					}
 				}
-				cropImage = nil;
+				
+				cropImage = nil; // remove reference from memory after used
 				
 				// Erase metadata orientation
 				[imageMetadata removeObjectForKey:(NSString *)kCGImagePropertyOrientation];
