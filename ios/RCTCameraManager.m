@@ -592,9 +592,8 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
 				CGImage = CGImageSourceCreateImageAtIndex(source, 0, NULL);
 				
 				UIImage *cropImage = [RCTCameraManager cropImage:[UIImage imageWithCGImage:CGImage]
-													withCropSize:CGSizeMake(1080, 1080)];
-				
-				CGImage = CGImageRetain(cropImage.CGImage);
+													withCropSize:[self view].frame.size];
+				CGImageRelease(CGImage);
 				
 				// Rotate it
 				CGImageRef rotatedCGImage;
@@ -606,16 +605,16 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
 					int metadataOrientation = [[imageMetadata objectForKey:(NSString *)kCGImagePropertyOrientation] intValue];
 					
 					if (metadataOrientation == 6) {
-						rotatedCGImage = [self newCGImageRotatedByAngle:CGImage angle:270];
+						rotatedCGImage = [self newCGImageRotatedByAngle:cropImage.CGImage angle:270];
 					} else if (metadataOrientation == 1) {
-						rotatedCGImage = [self newCGImageRotatedByAngle:CGImage angle:0];
+						rotatedCGImage = [self newCGImageRotatedByAngle:cropImage.CGImage angle:0];
 					} else if (metadataOrientation == 3) {
-						rotatedCGImage = [self newCGImageRotatedByAngle:CGImage angle:180];
+						rotatedCGImage = [self newCGImageRotatedByAngle:cropImage.CGImage angle:180];
 					} else {
-						rotatedCGImage = [self newCGImageRotatedByAngle:CGImage angle:0];
+						rotatedCGImage = [self newCGImageRotatedByAngle:cropImage.CGImage angle:0];
 					}
 				}
-				CGImageRelease(CGImage);
+				cropImage = nil;
 				
 				// Erase metadata orientation
 				[imageMetadata removeObjectForKey:(NSString *)kCGImagePropertyOrientation];
