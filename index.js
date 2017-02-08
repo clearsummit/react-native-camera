@@ -1,13 +1,12 @@
-import React, { Component, PropTypes } from 'react';
-import {
-  DeviceEventEmitter, // android
-  NativeAppEventEmitter, // ios
-  NativeModules,
-  Platform,
-  StyleSheet,
-  requireNativeComponent,
-  View,
-} from 'react-native';
+var React = require('react');
+var { PropTypes, Component } = React;
+var { DeviceEventEmitter, // android
+      NativeAppEventEmitter, // ios
+      NativeModules,
+      Platform,
+      StyleSheet,
+      requireNativeComponent,
+      View } = require('react-native');
 
 const CameraManager = NativeModules.CameraManager || NativeModules.CameraModule;
 const CAMERA_REF = 'camera';
@@ -41,7 +40,7 @@ function convertNativeProps(props) {
   if (typeof props.captureMode === 'string') {
     newProps.captureMode = Camera.constants.CaptureMode[props.captureMode];
   }
-  
+
   if (typeof props.captureTarget === 'string') {
     newProps.captureTarget = Camera.constants.CaptureTarget[props.captureTarget];
   }
