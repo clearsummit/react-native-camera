@@ -43,7 +43,7 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 public class RCTCameraModule extends ReactContextBaseJavaModule
-    implements MediaRecorder.OnInfoListener, MediaRecorder.OnErrorListener, LifecycleEventListener {
+        implements MediaRecorder.OnInfoListener, MediaRecorder.OnErrorListener, LifecycleEventListener {
     private static final String TAG = "RCTCameraModule";
 
     public static final int RCT_CAMERA_ASPECT_FILL = 0;
@@ -87,6 +87,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
     private Camera mCamera = null;
     private Promise mRecordingPromise = null;
     private ReadableMap mRecordingOptions;
+    private Boolean mSafeToCapture = true;
 
     public RCTCameraModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -96,7 +97,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
     }
 
     public static ReactApplicationContext getReactContextSingleton() {
-      return _reactContext;
+        return _reactContext;
     }
 
     /**
@@ -657,7 +658,8 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
 
         RCTCamera.getInstance().adjustCameraRotationToDeviceOrientation(options.getInt("type"), deviceOrientation);
         camera.setPreviewCallback(null);
-        camera.takePicture(null, null, new Camera.PictureCallback() {
+
+        Camera.PictureCallback captureCallback = new Camera.PictureCallback() {
             @Override
             public void onPictureTaken(byte[] data, Camera camera) {
 
@@ -734,8 +736,19 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                         break;
                     }
                 }
+
+                mSafeToCapture = true;
             }
-        });
+        };
+
+        if(mSafeToCapture) {
+            try {
+                camera.takePicture(null, null, captureCallback);
+                mSafeToCapture = false;
+            } catch(RuntimeException ex) {
+                Log.e(TAG, "Couldn't capture photo.", ex);
+            }
+        }
     }
 
     @ReactMethod
