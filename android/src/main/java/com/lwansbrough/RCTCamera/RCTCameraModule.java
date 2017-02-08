@@ -139,7 +139,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
 
     @Override
     public String getName() {
-        return "RCTCameraModule";
+        return "CameraModule";
     }
 
     @Nullable
