@@ -441,6 +441,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
 
         // Taking the snapshot of video
         Bitmap snapshot = ThumbnailUtils.createVideoThumbnail(mVideoFile.getAbsolutePath(), 1);
+        snapshot = ThumbnailUtils.extractThumbnail(snapshot, 512, 512);
         String base64Thumbnail = this.getBase64ImageString(snapshot);
 
         WritableMap response = new WritableNativeMap();
@@ -489,7 +490,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
         String imgString;
         if (photo != null) {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            photo.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+            photo.compress(Bitmap.CompressFormat.JPEG, 50, outputStream);
             byte[] byteArray = outputStream.toByteArray();
             imgString = Base64.encodeToString(byteArray, Base64.DEFAULT);
         } else {
