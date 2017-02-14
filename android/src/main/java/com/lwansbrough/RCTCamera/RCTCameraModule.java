@@ -6,9 +6,11 @@
 package com.lwansbrough.RCTCamera;
 
 import android.content.ContentValues;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
+import android.graphics.Point;
 import android.hardware.Camera;
 import android.media.CamcorderProfile;
 import android.media.ExifInterface;
@@ -21,8 +23,11 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Base64;
 import android.util.Log;
+import android.view.Display;
 import android.view.Surface;
+import android.view.WindowManager;
 
+import com.desmond.squarecamera.ImageUtility;
 import com.drew.imaging.ImageMetadataReader;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.Metadata;
@@ -442,7 +447,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
         // Taking the snapshot of video
         Bitmap snapshot = ThumbnailUtils.createVideoThumbnail(mVideoFile.getAbsolutePath(), 1);
         snapshot = ThumbnailUtils.extractThumbnail(snapshot, 512, 512);
-        String base64Thumbnail = this.getBase64ImageString(snapshot);
+        String base64Thumbnail = ImageUtility.convertBitmapToString(snapshot);
 
         WritableMap response = new WritableNativeMap();
         switch (mRecordingOptions.getInt("target")) {
@@ -484,19 +489,6 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
         }
 
         mRecordingPromise = null;
-    }
-
-    public String getBase64ImageString(Bitmap photo) {
-        String imgString;
-        if (photo != null) {
-            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            photo.compress(Bitmap.CompressFormat.JPEG, 50, outputStream);
-            byte[] byteArray = outputStream.toByteArray();
-            imgString = Base64.encodeToString(byteArray, Base64.DEFAULT);
-        } else {
-            imgString = "";
-        }
-        return imgString;
     }
 
     public static byte[] convertFileToByteArray(File f) {
@@ -703,6 +695,11 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                 camera.stopPreview();
                 camera.startPreview();
                 WritableMap response = new WritableNativeMap();
+
+                Display display = ((WindowManager) _reactContext.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+                Point mSize = new Point();
+                display.getSize(mSize);
+
                 switch (options.getInt("target")) {
                     case RCT_CAMERA_CAPTURE_TARGET_MEMORY:
                         String encoded = Base64.encodeToString(data, Base64.DEFAULT);
@@ -724,7 +721,9 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
 
                         rewriteOrientation(cameraRollFile.getAbsolutePath());
                         addToMediaStore(cameraRollFile.getAbsolutePath());
-                        response.putString("path", Uri.fromFile(cameraRollFile).toString());
+                        Bitmap bitmap = ImageUtility.decodeSampledBitmapFromPath(Uri.fromFile(cameraRollFile).getPath(), mSize.x, mSize.x);
+                        Uri croppedImageUri = ImageUtility.savePicture(_reactContext, bitmap);
+                        response.putString("path", croppedImageUri.toString());
                         promise.resolve(response);
                         break;
                     }
@@ -742,7 +741,9 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                         }
 
                         rewriteOrientation(pictureFile.getAbsolutePath());
-                        response.putString("path", Uri.fromFile(pictureFile).toString());
+                        Bitmap bitmap = ImageUtility.decodeSampledBitmapFromPath(Uri.fromFile(pictureFile).getPath(), mSize.x, mSize.x);
+                        Uri croppedImageUri = ImageUtility.savePicture(_reactContext, bitmap);
+                        response.putString("path", croppedImageUri.toString());
                         promise.resolve(response);
                         break;
                     }
@@ -759,7 +760,9 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                         }
 
                         rewriteOrientation(tempFile.getAbsolutePath());
-                        response.putString("path", Uri.fromFile(tempFile).toString());
+                        Bitmap bitmap = ImageUtility.decodeSampledBitmapFromPath(Uri.fromFile(tempFile).getPath(), mSize.x, mSize.x);
+                        Uri croppedImageUri = ImageUtility.savePicture(_reactContext, bitmap);
+                        response.putString("path", croppedImageUri.toString());
                         promise.resolve(response);
                         break;
                     }
