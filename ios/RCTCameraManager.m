@@ -21,6 +21,8 @@
 
 @end
 
+#define kScreenScale [[UIScreen mainScreen] scale]
+
 @implementation RCTCameraManager
 
 RCT_EXPORT_MODULE();
@@ -601,7 +603,8 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
                 UIImage *cropImage = nil;
                 if (self.cropToViewport) {
                     cropImage = [RCTCameraManager cropImage:[UIImage imageWithCGImage:CGImage]
-                                               withCropSize:self.previewLayer.frame.size];
+                                               withCropSize:CGSizeMake(self.previewLayer.frame.size.width*kScreenScale,
+                                                                       self.previewLayer.frame.size.height*kScreenScale)];
                     CGImageRelease(CGImage);
                 }
                 
@@ -886,7 +889,8 @@ didFinishRecordingToOutputFileAtURL:(NSURL *)outputFileURL
         UIImage *videoThumbnailImage = [RCTCameraManager imageFromVideo:[NSURL fileURLWithPath:fullPath]];
         if (videoThumbnailImage) {
             UIImage *cropImage = [RCTCameraManager cropImage:videoThumbnailImage
-                                                withCropSize:self.previewLayer.frame.size];
+                                                withCropSize:CGSizeMake(self.previewLayer.frame.size.width*kScreenScale,
+                                                                        self.previewLayer.frame.size.height*kScreenScale)];
             [UIImageJPEGRepresentation(cropImage, 1.0) writeToFile:videoThumbnailPath
                                                         atomically:YES];
             [videoInfo setObject:videoThumbnailPath forKey:@"thumbnail"];
