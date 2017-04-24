@@ -21,8 +21,6 @@
 
 @end
 
-#define kScreenScale [[UIScreen mainScreen] scale]
-
 @implementation RCTCameraManager
 
 RCT_EXPORT_MODULE();
@@ -160,7 +158,7 @@ RCT_CUSTOM_VIEW_PROPERTY(captureQuality, NSInteger, RCTCamera) {
             qualityString = AVCaptureSessionPreset640x480;
             break;
         case RCTCameraCaptureSessionPresetPreview:
-            qualityString = AVCaptureSessionPresetPhoto;
+            qualityString = AVCaptureSessionPresetHigh;
             self.cropToViewport = YES;
             break;
     }
@@ -603,8 +601,8 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
                 UIImage *cropImage = nil;
                 if (self.cropToViewport) {
                     cropImage = [RCTCameraManager cropImage:[UIImage imageWithCGImage:CGImage]
-                                               withCropSize:CGSizeMake(self.previewLayer.frame.size.width*kScreenScale,
-                                                                       self.previewLayer.frame.size.height*kScreenScale)];
+                                               withCropSize:CGSizeMake(self.previewLayer.frame.size.width,
+                                                                       self.previewLayer.frame.size.height)];
                     CGImageRelease(CGImage);
                 }
                 
@@ -889,8 +887,8 @@ didFinishRecordingToOutputFileAtURL:(NSURL *)outputFileURL
         UIImage *videoThumbnailImage = [RCTCameraManager imageFromVideo:[NSURL fileURLWithPath:fullPath]];
         if (videoThumbnailImage) {
             UIImage *cropImage = [RCTCameraManager cropImage:videoThumbnailImage
-                                                withCropSize:CGSizeMake(self.previewLayer.frame.size.width*kScreenScale,
-                                                                        self.previewLayer.frame.size.height*kScreenScale)];
+                                                withCropSize:CGSizeMake(self.previewLayer.frame.size.width,
+                                                                        self.previewLayer.frame.size.height)];
             [UIImageJPEGRepresentation(cropImage, 1.0) writeToFile:videoThumbnailPath
                                                         atomically:YES];
             [videoInfo setObject:videoThumbnailPath forKey:@"thumbnail"];
