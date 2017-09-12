@@ -6,15 +6,24 @@
 package com.lwansbrough.RCTCamera;
 
 import android.content.ContentValues;
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Point;
 import android.hardware.Camera;
-import android.media.*;
+import android.media.CamcorderProfile;
+import android.media.MediaActionSound;
+import android.media.MediaRecorder;
+import android.media.MediaScannerConnection;
+import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Base64;
 import android.util.Log;
+import android.view.Display;
 import android.view.Surface;
+import android.view.WindowManager;
 
 import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.Promise;
@@ -25,7 +34,11 @@ import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.WritableNativeMap;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -421,6 +434,11 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
         f.setReadable(true, false); // so mediaplayer can play it
         f.setWritable(true, false); // so can clean it up
 
+        // Taking the snapshot of video
+        Bitmap snapshot = ThumbnailUtils.createVideoThumbnail(mVideoFile.getAbsolutePath(), 1);
+        snapshot = ThumbnailUtils.extractThumbnail(snapshot, 512, 512);
+        String base64Thumbnail = ImageUtility.convertBitmapToString(snapshot);
+
         WritableMap response = new WritableNativeMap();
         switch (mRecordingOptions.getInt("target")) {
             case RCT_CAMERA_CAPTURE_TARGET_MEMORY:
@@ -450,11 +468,13 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                 _reactContext.getContentResolver().insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values);
                 addToMediaStore(mVideoFile.getAbsolutePath());
                 response.putString("path", Uri.fromFile(mVideoFile).toString());
+                response.putString("thumbnail", base64Thumbnail);
                 mRecordingPromise.resolve(response);
                 break;
             case RCT_CAMERA_CAPTURE_TARGET_TEMP:
             case RCT_CAMERA_CAPTURE_TARGET_DISK:
                 response.putString("path", Uri.fromFile(mVideoFile).toString());
+                response.putString("thumbnail", base64Thumbnail);
                 mRecordingPromise.resolve(response);
         }
 
@@ -767,7 +787,14 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
 
     private void resolveImage(final File imageFile, final Promise promise, boolean addToMediaStore) {
         final WritableMap response = new WritableNativeMap();
-        response.putString("path", Uri.fromFile(imageFile).toString());
+
+        Display display = ((WindowManager) _reactContext.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
+        Point mSize = new Point();
+        display.getSize(mSize);
+
+        Bitmap bitmap = ImageUtility.decodeSampledBitmapFromPath(Uri.fromFile(imageFile).getPath(), mSize.x, mSize.x);
+        Uri croppedImageUri = ImageUtility.savePicture(_reactContext, bitmap);
+        response.putString("path", croppedImageUri.toString());
 
         if(addToMediaStore) {
             // borrowed from react-native CameraRollManager, it finds and returns the 'internal'
