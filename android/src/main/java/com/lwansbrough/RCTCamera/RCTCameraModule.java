@@ -25,6 +25,7 @@ import android.view.Display;
 import android.view.Surface;
 import android.view.WindowManager;
 
+import com.desmond.squarecamera.ImageUtility;
 import com.facebook.react.bridge.LifecycleEventListener;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -49,9 +50,9 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 public class RCTCameraModule extends ReactContextBaseJavaModule
-    implements MediaRecorder.OnInfoListener, MediaRecorder.OnErrorListener, LifecycleEventListener {
+implements MediaRecorder.OnInfoListener, MediaRecorder.OnErrorListener, LifecycleEventListener {
     private static final String TAG = "RCTCameraModule";
-
+    
     public static final int RCT_CAMERA_ASPECT_FILL = 0;
     public static final int RCT_CAMERA_ASPECT_FIT = 1;
     public static final int RCT_CAMERA_ASPECT_STRETCH = 2;
@@ -83,11 +84,11 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
     public static final String RCT_CAMERA_CAPTURE_QUALITY_480P = "480p";
     public static final int MEDIA_TYPE_IMAGE = 1;
     public static final int MEDIA_TYPE_VIDEO = 2;
-
+    
     private static ReactApplicationContext _reactContext;
     private RCTSensorOrientationChecker _sensorOrientationChecker;
     private MediaActionSound sound = new MediaActionSound();
-
+    
     private MediaRecorder mMediaRecorder;
     private long MRStartTime;
     private File mVideoFile;
@@ -95,7 +96,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
     private Promise mRecordingPromise = null;
     private ReadableMap mRecordingOptions;
     private Boolean mSafeToCapture = true;
-
+    
     public RCTCameraModule(ReactApplicationContext reactContext) {
         super(reactContext);
         _reactContext = reactContext;
@@ -103,11 +104,11 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
         _reactContext.addLifecycleEventListener(this);
         sound.load(MediaActionSound.SHUTTER_CLICK);
     }
-
+    
     public static ReactApplicationContext getReactContextSingleton() {
-      return _reactContext;
+        return _reactContext;
     }
-
+    
     /**
      * Callback invoked on new MediaRecorder info.
      *
@@ -120,13 +121,13 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
      */
     public void onInfo(MediaRecorder mr, int what, int extra) {
         if ( what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED ||
-                what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED) {
+            what == MediaRecorder.MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED) {
             if (mRecordingPromise != null) {
                 releaseMediaRecorder(); // release the MediaRecorder object and resolve promise
             }
         }
     }
-
+    
     /**
      * Callback invoked when a MediaRecorder instance encounters an error while recording.
      *
@@ -145,12 +146,12 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
             releaseMediaRecorder();
         }
     }
-
+    
     @Override
     public String getName() {
         return "RCTCameraModule";
     }
-
+    
     @Nullable
     @Override
     public Map<String, Object> getConstants() {
@@ -166,7 +167,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                 put("FlashMode", getFlashModeConstants());
                 put("TorchMode", getTorchModeConstants());
             }
-
+            
             private Map<String, Object> getAspectConstants() {
                 return Collections.unmodifiableMap(new HashMap<String, Object>() {
                     {
@@ -176,7 +177,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                     }
                 });
             }
-
+            
             private Map<String, Object> getBarCodeConstants() {
                 return Collections.unmodifiableMap(new HashMap<String, Object>() {
                     {
@@ -184,7 +185,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                     }
                 });
             }
-
+            
             private Map<String, Object> getTypeConstants() {
                 return Collections.unmodifiableMap(new HashMap<String, Object>() {
                     {
@@ -193,7 +194,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                     }
                 });
             }
-
+            
             private Map<String, Object> getCaptureQualityConstants() {
                 return Collections.unmodifiableMap(new HashMap<String, Object>() {
                     {
@@ -208,7 +209,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                     }
                 });
             }
-
+            
             private Map<String, Object> getCaptureModeConstants() {
                 return Collections.unmodifiableMap(new HashMap<String, Object>() {
                     {
@@ -217,7 +218,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                     }
                 });
             }
-
+            
             private Map<String, Object> getCaptureTargetConstants() {
                 return Collections.unmodifiableMap(new HashMap<String, Object>() {
                     {
@@ -228,7 +229,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                     }
                 });
             }
-
+            
             private Map<String, Object> getOrientationConstants() {
                 return Collections.unmodifiableMap(new HashMap<String, Object>() {
                     {
@@ -240,7 +241,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                     }
                 });
             }
-
+            
             private Map<String, Object> getFlashModeConstants() {
                 return Collections.unmodifiableMap(new HashMap<String, Object>() {
                     {
@@ -250,7 +251,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                     }
                 });
             }
-
+            
             private Map<String, Object> getTorchModeConstants() {
                 return Collections.unmodifiableMap(new HashMap<String, Object>() {
                     {
@@ -262,7 +263,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
             }
         });
     }
-
+    
     /**
      * Prepare media recorder for video capture.
      *
@@ -278,33 +279,33 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
         if (cm == null) {
             return new RuntimeException("CamcorderProfile not found in prepareMediaRecorder.");
         }
-
+        
         // Unlock camera to make available for MediaRecorder. Note that this statement must be
         // executed before calling setCamera when configuring the MediaRecorder instance.
         mCamera.unlock();
-
+        
         // Create new MediaRecorder instance.
         mMediaRecorder = new MediaRecorder();
-
+        
         // Attach callback to handle maxDuration (@see onInfo method in this file).
         mMediaRecorder.setOnInfoListener(this);
         // Attach error listener (@see onError method in this file).
         mMediaRecorder.setOnErrorListener(this);
-
+        
         // Set camera.
         mMediaRecorder.setCamera(mCamera);
-
+        
         // Set AV sources.
         mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
         mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
-
+        
         // Adjust for orientation.
         mMediaRecorder.setOrientationHint(RCTCamera.getInstance().getAdjustedDeviceOrientation());
-
+        
         // Set video output format and encoding using CamcorderProfile.
         cm.fileFormat = MediaRecorder.OutputFormat.MPEG_4;
         mMediaRecorder.setProfile(cm);
-
+        
         // Set video output file.
         mVideoFile = null;
         switch (options.getInt("target")) {
@@ -326,17 +327,17 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
             return new RuntimeException("Error while preparing output file in prepareMediaRecorder.");
         }
         mMediaRecorder.setOutputFile(mVideoFile.getPath());
-
+        
         if (options.hasKey("totalSeconds")) {
             int totalSeconds = options.getInt("totalSeconds");
             mMediaRecorder.setMaxDuration(totalSeconds * 1000);
         }
-
+        
         if (options.hasKey("maxFileSize")) {
             int maxFileSize = options.getInt("maxFileSize");
             mMediaRecorder.setMaxFileSize(maxFileSize);
         }
-
+        
         // Prepare the MediaRecorder instance with the provided configuration settings.
         try {
             mMediaRecorder.prepare();
@@ -345,27 +346,27 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
             releaseMediaRecorder();
             return ex;
         }
-
+        
         return null;
     }
-
+    
     private void record(final ReadableMap options, final Promise promise) {
         if (mRecordingPromise != null) {
             return;
         }
-
+        
         mCamera = RCTCamera.getInstance().acquireCameraInstance(options.getInt("type"));
         if (mCamera == null) {
             promise.reject(new RuntimeException("No camera found."));
             return;
         }
-
+        
         Throwable prepareError = prepareMediaRecorder(options);
         if (prepareError != null) {
             promise.reject(prepareError);
             return;
         }
-
+        
         try {
             mMediaRecorder.start();
             MRStartTime =  System.currentTimeMillis();
@@ -376,7 +377,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
             promise.reject(ex);
         }
     }
-
+    
     /**
      * Release media recorder following video capture (or failure to start recording session).
      *
@@ -393,7 +394,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                 Log.e(TAG, "releaseMediaRecorder thread sleep error.", ex);
             }
         }
-
+        
         // Release actual MediaRecorder instance.
         if (mMediaRecorder != null) {
             // Stop recording video.
@@ -402,43 +403,43 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
             } catch (RuntimeException ex) {
                 Log.e(TAG, "Media recorder stop error.", ex);
             }
-
+            
             // Optionally, remove the configuration settings from the recorder.
             mMediaRecorder.reset();
-
+            
             // Release the MediaRecorder.
             mMediaRecorder.release();
-
+            
             // Reset variable.
             mMediaRecorder = null;
         }
-
+        
         // Lock the camera so that future MediaRecorder sessions can use it by calling
         // Camera.lock(). Note this is not required on Android 4.0+ unless the
         // MediaRecorder.prepare() call fails.
         if (mCamera != null) {
             mCamera.lock();
         }
-
+        
         if (mRecordingPromise == null) {
             return;
         }
-
+        
         File f = new File(mVideoFile.getPath());
         if (!f.exists()) {
             mRecordingPromise.reject(new RuntimeException("There is nothing recorded."));
             mRecordingPromise = null;
             return;
         }
-
+        
         f.setReadable(true, false); // so mediaplayer can play it
         f.setWritable(true, false); // so can clean it up
-
+        
         // Taking the snapshot of video
         Bitmap snapshot = ThumbnailUtils.createVideoThumbnail(mVideoFile.getAbsolutePath(), 1);
         snapshot = ThumbnailUtils.extractThumbnail(snapshot, 512, 512);
         String base64Thumbnail = ImageUtility.convertBitmapToString(snapshot);
-
+        
         WritableMap response = new WritableNativeMap();
         switch (mRecordingOptions.getInt("target")) {
             case RCT_CAMERA_CAPTURE_TARGET_MEMORY:
@@ -451,19 +452,19 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                 ContentValues values = new ContentValues();
                 values.put(MediaStore.Video.Media.DATA, mVideoFile.getPath());
                 values.put(MediaStore.Video.Media.TITLE, mRecordingOptions.hasKey("title") ? mRecordingOptions.getString("title") : "video");
-
+                
                 if (mRecordingOptions.hasKey("description")) {
                     values.put(MediaStore.Video.Media.DESCRIPTION, mRecordingOptions.hasKey("description"));
                 }
-
+                
                 if (mRecordingOptions.hasKey("latitude")) {
                     values.put(MediaStore.Video.Media.LATITUDE, mRecordingOptions.getString("latitude"));
                 }
-
+                
                 if (mRecordingOptions.hasKey("longitude")) {
                     values.put(MediaStore.Video.Media.LONGITUDE, mRecordingOptions.getString("longitude"));
                 }
-
+                
                 values.put(MediaStore.Video.Media.MIME_TYPE, "video/mp4");
                 _reactContext.getContentResolver().insert(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, values);
                 addToMediaStore(mVideoFile.getAbsolutePath());
@@ -477,10 +478,10 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                 response.putString("thumbnail", base64Thumbnail);
                 mRecordingPromise.resolve(response);
         }
-
+        
         mRecordingPromise = null;
     }
-
+    
     public static byte[] convertFileToByteArray(File f)
     {
         byte[] byteArray = null;
@@ -490,11 +491,11 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             byte[] b = new byte[1024*8];
             int bytesRead;
-
+            
             while ((bytesRead = inputStream.read(b)) != -1) {
                 bos.write(b, 0, bytesRead);
             }
-
+            
             byteArray = bos.toByteArray();
         }
         catch (IOException e)
@@ -503,7 +504,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
         }
         return byteArray;
     }
-
+    
     @ReactMethod
     public void capture(final ReadableMap options, final Promise promise) {
         int orientation = options.hasKey("orientation") ? options.getInt("orientation") : RCTCamera.getInstance().getOrientation();
@@ -522,59 +523,59 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
             captureWithOrientation(options, promise, orientation);
         }
     }
-
+    
     private void captureWithOrientation(final ReadableMap options, final Promise promise, int deviceOrientation) {
         Camera camera = RCTCamera.getInstance().acquireCameraInstance(options.getInt("type"));
         if (null == camera) {
             promise.reject("No camera found.");
             return;
         }
-
+        
         if (options.getInt("mode") == RCT_CAMERA_CAPTURE_MODE_VIDEO) {
             record(options, promise);
             return;
         }
-
+        
         RCTCamera.getInstance().setCaptureQuality(options.getInt("type"), options.getString("quality"));
-
+        
         if (options.hasKey("playSoundOnCapture") && options.getBoolean("playSoundOnCapture")) {
             sound.play(MediaActionSound.SHUTTER_CLICK);
         }
-
+        
         if (options.hasKey("quality")) {
             RCTCamera.getInstance().setCaptureQuality(options.getInt("type"), options.getString("quality"));
         }
-
+        
         RCTCamera.getInstance().adjustCameraRotationToDeviceOrientation(options.getInt("type"), deviceOrientation);
         camera.setPreviewCallback(null);
-
+        
         Camera.PictureCallback captureCallback = new Camera.PictureCallback() {
             @Override
             public void onPictureTaken(final byte[] data, Camera camera) {
                 camera.stopPreview();
                 camera.startPreview();
-
+                
                 AsyncTask.execute(new Runnable() {
                     @Override
                     public void run() {
                         processImage(new MutableImage(data), options, promise);
                     }
                 });
-
+                
                 mSafeToCapture = true;
             }
         };
-
+        
         if(mSafeToCapture) {
-          try {
-            camera.takePicture(null, null, captureCallback);
-            mSafeToCapture = false;
-          } catch(RuntimeException ex) {
-              Log.e(TAG, "Couldn't capture photo.", ex);
-          }
+            try {
+                camera.takePicture(null, null, captureCallback);
+                mSafeToCapture = false;
+            } catch(RuntimeException ex) {
+                Log.e(TAG, "Couldn't capture photo.", ex);
+            }
         }
     }
-
+    
     /**
      * synchronized in order to prevent the user crashing the app by taking many photos and them all being processed
      * concurrently which would blow the memory (esp on smaller devices), and slow things down.
@@ -588,7 +589,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                 promise.reject("Error fixing orientation image", e);
             }
         }
-
+        
         boolean shouldMirror = options.hasKey("mirrorImage") && options.getBoolean("mirrorImage");
         if (shouldMirror) {
             try {
@@ -597,12 +598,12 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                 promise.reject("Error mirroring image", e);
             }
         }
-
+        
         int jpegQualityPercent = 80;
         if(options.hasKey("jpegQuality")) {
             jpegQualityPercent = options.getInt("jpegQuality");
         }
-
+        
         switch (options.getInt("target")) {
             case RCT_CAMERA_CAPTURE_TARGET_MEMORY:
                 String encoded = mutableImage.toBase64(jpegQualityPercent);
@@ -616,18 +617,18 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                     promise.reject("Error creating media file.");
                     return;
                 }
-
+                
                 try {
                     mutableImage.writeDataToFile(cameraRollFile, options, jpegQualityPercent);
                 } catch (IOException | NullPointerException e) {
                     promise.reject("failed to save image file", e);
                     return;
                 }
-
+                
                 addToMediaStore(cameraRollFile.getAbsolutePath());
-
+                
                 resolveImage(cameraRollFile, promise, true);
-
+                
                 break;
             }
             case RCT_CAMERA_CAPTURE_TARGET_DISK: {
@@ -636,16 +637,16 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                     promise.reject("Error creating media file.");
                     return;
                 }
-
+                
                 try {
                     mutableImage.writeDataToFile(pictureFile, options, 85);
                 } catch (IOException e) {
                     promise.reject("failed to save image file", e);
                     return;
                 }
-
+                
                 resolveImage(pictureFile, promise, false);
-
+                
                 break;
             }
             case RCT_CAMERA_CAPTURE_TARGET_TEMP: {
@@ -654,21 +655,21 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                     promise.reject("Error creating media file.");
                     return;
                 }
-
+                
                 try {
                     mutableImage.writeDataToFile(tempFile, options, 85);
                 } catch (IOException e) {
                     promise.reject("failed to save image file", e);
                     return;
                 }
-
+                
                 resolveImage(tempFile, promise, false);
-
+                
                 break;
             }
         }
     }
-
+    
     @ReactMethod
     public void stopCapture(final Promise promise) {
         if (mRecordingPromise != null) {
@@ -678,7 +679,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
             promise.resolve("Not recording.");
         }
     }
-
+    
     @ReactMethod
     public void hasFlash(ReadableMap options, final Promise promise) {
         Camera camera = RCTCamera.getInstance().acquireCameraInstance(options.getInt("type"));
@@ -689,7 +690,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
         List<String> flashModes = camera.getParameters().getSupportedFlashModes();
         promise.resolve(null != flashModes && !flashModes.isEmpty());
     }
-
+    
     private File getOutputMediaFile(int type) {
         // Get environment directory type id from requested media type.
         String environmentDirectoryType;
@@ -701,20 +702,20 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
             Log.e(TAG, "Unsupported media type:" + type);
             return null;
         }
-
+        
         return getOutputFile(
-                type,
-                Environment.getExternalStoragePublicDirectory(environmentDirectoryType)
-        );
+                             type,
+                             Environment.getExternalStoragePublicDirectory(environmentDirectoryType)
+                             );
     }
-
+    
     private File getOutputCameraRollFile(int type) {
         return getOutputFile(
-                type,
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
-        );
+                             type,
+                             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)
+                             );
     }
-
+    
     private File getOutputFile(int type, File storageDir) {
         // Create the storage directory if it does not exist
         if (!storageDir.exists()) {
@@ -723,10 +724,10 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
                 return null;
             }
         }
-
+        
         // Create a media file name
         String fileName = String.format("%s", new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()));
-
+        
         if (type == MEDIA_TYPE_IMAGE) {
             fileName = String.format("IMG_%s.jpg", fileName);
         } else if (type == MEDIA_TYPE_VIDEO) {
@@ -735,16 +736,16 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
             Log.e(TAG, "Unsupported media type:" + type);
             return null;
         }
-
+        
         return new File(String.format("%s%s%s", storageDir.getPath(), File.separator, fileName));
     }
-
+    
     private File getTempMediaFile(int type) {
         try {
             String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
             File outputDir = _reactContext.getCacheDir();
             File outputFile;
-
+            
             if (type == MEDIA_TYPE_IMAGE) {
                 outputFile = File.createTempFile("IMG_" + timeStamp, ".jpg", outputDir);
             } else if (type == MEDIA_TYPE_VIDEO) {
@@ -759,11 +760,11 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
             return null;
         }
     }
-
+    
     private void addToMediaStore(String path) {
         MediaScannerConnection.scanFile(_reactContext, new String[] { path }, null, null);
     }
-
+    
     /**
      * LifecycleEventListener overrides
      */
@@ -771,7 +772,7 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
     public void onHostResume() {
         // ... do nothing
     }
-
+    
     @Override
     public void onHostPause() {
         // On pause, we stop any pending recording session
@@ -779,44 +780,44 @@ public class RCTCameraModule extends ReactContextBaseJavaModule
             releaseMediaRecorder();
         }
     }
-
+    
     @Override
     public void onHostDestroy() {
         // ... do nothing
     }
-
+    
     private void resolveImage(final File imageFile, final Promise promise, boolean addToMediaStore) {
         final WritableMap response = new WritableNativeMap();
-
+        
         Display display = ((WindowManager) _reactContext.getSystemService(Context.WINDOW_SERVICE)).getDefaultDisplay();
         Point mSize = new Point();
         display.getSize(mSize);
-
+        
         Bitmap bitmap = ImageUtility.decodeSampledBitmapFromPath(Uri.fromFile(imageFile).getPath(), mSize.x, mSize.x);
         Uri croppedImageUri = ImageUtility.savePicture(_reactContext, bitmap);
         response.putString("path", croppedImageUri.toString());
-
+        
         if(addToMediaStore) {
             // borrowed from react-native CameraRollManager, it finds and returns the 'internal'
             // representation of the image uri that was just saved.
             // e.g. content://media/external/images/media/123
             MediaScannerConnection.scanFile(
-                    _reactContext,
-                    new String[]{imageFile.getAbsolutePath()},
-                    null,
-                    new MediaScannerConnection.OnScanCompletedListener() {
-                        @Override
-                        public void onScanCompleted(String path, Uri uri) {
-                            if (uri != null) {
-                                response.putString("mediaUri", uri.toString());
-                            }
-
-                            promise.resolve(response);
-                        }
-                    });
+                                            _reactContext,
+                                            new String[]{imageFile.getAbsolutePath()},
+                                            null,
+                                            new MediaScannerConnection.OnScanCompletedListener() {
+                @Override
+                public void onScanCompleted(String path, Uri uri) {
+                    if (uri != null) {
+                        response.putString("mediaUri", uri.toString());
+                    }
+                    
+                    promise.resolve(response);
+                }
+            });
         } else {
             promise.resolve(response);
         }
     }
-
+    
 }

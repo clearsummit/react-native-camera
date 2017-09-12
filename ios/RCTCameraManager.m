@@ -607,17 +607,17 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
                 
                 UIImage *cropImage = nil;
                 if (self.cropToViewport) {
-                    cropImage = [RCTCameraManager cropImage:[UIImage imageWithCGImage:CGImage]
+                    cropImage = [RCTCameraManager cropImage:[UIImage imageWithCGImage:cgImage]
                                                withCropSize:CGSizeMake(self.previewLayer.frame.size.width,
                                                                        self.previewLayer.frame.size.height)];
-                    CGImageRelease(CGImage);
+                    CGImageRelease(cgImage);
                 }
                 
                 // Rotate it
                 CGImageRef rotatedCGImage;
                 if ([options objectForKey:@"rotation"]) {
                     float rotation = [[options objectForKey:@"rotation"] floatValue];
-                    rotatedCGImage = [self newCGImageRotatedByAngle:cropImage ? cropImage.CGImage : CGImage
+                    rotatedCGImage = [self newCGImageRotatedByAngle:cropImage ? cropImage.CGImage : cgImage
                                                               angle:rotation];
                 } else if ([[options objectForKey:@"fixOrientation"] boolValue] == YES) {
                     // Get metadata orientation
@@ -626,27 +626,28 @@ RCT_EXPORT_METHOD(hasFlash:(RCTPromiseResolveBlock)resolve reject:(RCTPromiseRej
                     bool rotated = false;
                     //see http://www.impulseadventure.com/photo/exif-orientation.html
                     if (metadataOrientation == 6) {
-                        rotatedCGImage = [self newCGImageRotatedByAngle:cropImage ? cropImage.CGImage : CGImage
+                        rotatedCGImage = [self newCGImageRotatedByAngle:cropImage ? cropImage.CGImage : cgImage
                                                                   angle:270];
                         rotated = true;
                     } else if (metadataOrientation == 3) {
-                        rotatedCGImage = [self newCGImageRotatedByAngle:cropImage ? cropImage.CGImage : CGImage
+                        rotatedCGImage = [self newCGImageRotatedByAngle:cropImage ? cropImage.CGImage : cgImage
                                                                   angle:180];
                         rotated = true;
                     } else {
-                        rotatedCGImage = cropImage ? cropImage.CGImage : CGImage;
+                        rotatedCGImage = cropImage ? cropImage.CGImage : cgImage;
                     }
                     
                     if(rotated) {
                         [imageMetadata setObject:[NSNumber numberWithInteger:1] forKey:(NSString *)kCGImagePropertyOrientation];
-                        CGImageRelease(cropImage ? cropImage.CGImage : CGImage);
                     }
                 } else {
-                    rotatedCGImage = cropImage ? cropImage.CGImage : CGImage;
+                    rotatedCGImage = cropImage ? cropImage.CGImage : cgImage;
                 }
                 
                 if (cropImage) {
                     cropImage = nil; // remove reference from memory after used
+                } else {
+                    CGImageRelease(cgImage);
                 }
                 
                 // Erase stupid TIFF stuff
@@ -885,6 +886,7 @@ didFinishRecordingToOutputFileAtURL:(NSURL *)outputFileURL
     else if (self.videoTarget == RCTCameraCaptureTargetTemp) {
         NSString *fileName = [[NSProcessInfo processInfo] globallyUniqueString];
         NSString *fullPath = [NSString stringWithFormat:@"%@%@.mov", NSTemporaryDirectory(), fileName];
+        NSString *videoThumbnailPath = [NSString stringWithFormat:@"%@%@.jpg", NSTemporaryDirectory(), fileName];
         
         NSFileManager * fileManager = [NSFileManager defaultManager];
         NSError * error = nil;
